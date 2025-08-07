@@ -1,0 +1,155 @@
+# Docker ignore file for FlyerFlutter
+# Excludes unnecessary files from Docker build context
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+PLANNING.md
+TASK.md
+*.md
+docs/
+
+# Development and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.example
+
+# Python cache and build files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Python virtual environments
+venv/
+env/
+ENV/
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+pytest_debug.log
+
+# Node.js dependencies and build files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Frontend build files (except final dist)
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# Docker files (don't copy Docker files into container)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Development scripts
+scripts/dev-*
+scripts/local-*
+
+# Research directory (if it contains large files)
+research/
+
+# Data directory (if it exists)
+data/
+
+# SSL certificates (should be mounted as volumes)
+ssl/
+certs/
+*.pem
+*.key
+*.crt
+
+# Monitoring and logging configs (mounted as volumes in production)
+monitoring/
+fluentd/
+nginx/
+
+# Large media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.pdf
+*.mp4
+*.avi
+*.mov
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
