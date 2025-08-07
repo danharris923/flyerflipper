@@ -12,16 +12,8 @@
       "dest": "/api/main.py"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|txt))",
-      "dest": "/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/public/$1"
     }
   ],
   "env": {
