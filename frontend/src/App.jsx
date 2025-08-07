@@ -169,18 +169,34 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Check for saved location on mount
+  // Check for saved location and URL parameters on mount
   useEffect(() => {
-    const savedLocation = localStorage.getItem('userLocation');
-    if (savedLocation) {
-      try {
-        const location = JSON.parse(savedLocation);
-        setUserLocation(location);
-      } catch (e) {
-        console.error('Failed to parse saved location:', e);
-      }
+    // Check for postal code in URL parameters first
+    const urlParams = new URLSearchParams(window.location.search);
+    const postalCodeParam = urlParams.get('postal_code');
+    
+    if (postalCodeParam) {
+      // Use postal code from URL
+      const location = {
+        postalCode: postalCodeParam.replace(/\s/g, '').toUpperCase(),
+        city: `Postal Code ${postalCodeParam}`,
+        source: 'url_parameter'
+      };
+      setUserLocation(location);
+      localStorage.setItem('userLocation', JSON.stringify(location));
     } else {
-      setShowLocationDetector(true);
+      // Check for saved location
+      const savedLocation = localStorage.getItem('userLocation');
+      if (savedLocation) {
+        try {
+          const location = JSON.parse(savedLocation);
+          setUserLocation(location);
+        } catch (e) {
+          console.error('Failed to parse saved location:', e);
+        }
+      } else {
+        setShowLocationDetector(true);
+      }
     }
   }, []);
 
