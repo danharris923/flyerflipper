@@ -36,13 +36,13 @@
     }
   ],
   "env": {
-    "GOOGLE_API_KEY": "@google-api-key",
-    "GOOGLE_PLACES_API_KEY": "@google-places-api-key"
+    "GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
+    "GOOGLE_PLACES_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w"
   },
   "build": {
     "env": {
-      "GOOGLE_API_KEY": "@google-api-key",
-      "GOOGLE_PLACES_API_KEY": "@google-places-api-key"
+      "GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
+      "GOOGLE_PLACES_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w"
     }
   }
 }
