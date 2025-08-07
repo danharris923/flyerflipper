@@ -61,12 +61,11 @@ dontlookinhere/
 INITIAL.md
 php-agentic-framework/
 
-# Exclude actual implementation but keep examples
-backend/
-frontend/
+# Exclude docker-compose for Railway deployment
 docker-compose.yml
 nginx.conf
 test-system.sh
 
 # Keep example files - these override the above exclusions
 !PRPs/ai-powered-crm-system.md
+.vercel

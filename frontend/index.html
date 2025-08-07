@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Compare grocery prices across Canadian stores. Find the best deals and save money on your weekly shopping." />
+    <meta name="keywords" content="grocery, flyers, canada, price comparison, deals, savings, walmart, metro, sobeys" />
+    <meta name="author" content="FlyerFlutter" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="FlyerFlutter - Canadian Grocery Price Comparison" />
+    <meta property="og:description" content="Compare grocery prices across Canadian stores and find the best deals." />
+    <meta property="og:image" content="/og-image.jpg" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="FlyerFlutter - Canadian Grocery Price Comparison" />
+    <meta property="twitter:description" content="Compare grocery prices across Canadian stores and find the best deals." />
+    <meta property="twitter:image" content="/twitter-image.jpg" />
+    
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+    
+    <title>FlyerFlutter - Canadian Grocery Price Comparison</title>
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#22c55e" />
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  </head>
+  <body class="antialiased bg-neutral-50 text-neutral-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Loading script to prevent flash of unstyled content -->
+    <script>
+      // Set theme immediately to prevent flash
+      (function() {
+        try {
+          const theme = localStorage.getItem('theme') || 'light';
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </body>
+</html>
