@@ -3,11 +3,8 @@
   "name": "flyerflutter-app",
   "builds": [
     {
-      "src": "api/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9"
-      }
+      "src": "api/index.py",
+      "use": "@vercel/python"
     },
     {
       "src": "package.json",
@@ -20,7 +17,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/main.py"
+      "dest": "/api/index.py"
     },
     {
       "src": "/assets/(.*)",
@@ -41,6 +38,7 @@
   },
   "build": {
     "env": {
+      "VITE_GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
       "GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
       "GOOGLE_PLACES_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w"
     }
