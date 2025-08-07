@@ -276,8 +276,12 @@ def test_flipp(
     }
 
 # Export for Vercel
-from mangum import Mangum
-handler = Mangum(app, lifespan="off")
+try:
+    from mangum import Mangum
+    handler = Mangum(app, lifespan="off")
+except ImportError:
+    # Fallback for when mangum is not available
+    handler = app
 
 # For local development
 if __name__ == "__main__":
