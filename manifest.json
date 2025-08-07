@@ -1,0 +1,22 @@
+{
+  "name": "FlyerFlutter - Canadian Grocery Price Comparison",
+  "short_name": "FlyerFlutter",
+  "description": "Compare grocery prices across Canadian stores and find the best deals.",
+  "theme_color": "#22c55e",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png", 
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

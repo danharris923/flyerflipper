@@ -1,38 +1,42 @@
-# FlyerFlutter 🛒
+# 🍎 FlyerFlutter - Canadian Grocery Price Comparison
 
-**Canadian Grocery Flyer Comparison Platform**
+**Compare grocery prices across Canadian stores using real flyer data released nationwide on Wednesdays**
 
-FlyerFlutter helps Canadian shoppers find the best grocery deals by comparing weekly flyers from major grocery stores. Simply set your location, and discover the lowest prices on your favorite products nearby.
+FlyerFlutter is a modern web application that helps Canadian shoppers find the best deals and compare prices across major grocery chains. Built with React, FastAPI, and deployed on Vercel Pro.
 
 ## ✨ Features
 
-- 🗺️ **Location-based Store Discovery** - Find grocery stores near you using Google Places API
-- 🎯 **Smart Deal Comparison** - Compare prices across multiple stores automatically
-- 🔍 **Advanced Filtering** - Filter by price range, categories, distance, and discount percentage
-- 📱 **Mobile-First Design** - Responsive UI optimized for all devices
-- ⚡ **Real-time Updates** - Weekly flyer data refreshed automatically
-- 🏪 **Store Preferences** - Mark favorite stores or hide unwanted ones
-- 💾 **Local Storage** - Remember your preferences and location
+- 📍 **Location-based Store Discovery** - Find grocery stores near you using Google Places API
+- 🏪 **Real-time Flyer Data** - Access deals from major Canadian grocery chains
+- 💰 **Price Comparison** - Compare prices for the same products across different stores
+- 🔄 **Weekly Updates** - Automatically refreshed every Wednesday when new flyers are released
+- 🗺️ **Google Maps Integration** - Get directions to stores with the best deals
+- 📱 **Mobile-Friendly** - Beautiful responsive design that works on all devices
 
-## 🏗️ Architecture
+## 🚀 Live Demo
 
-### Backend (FastAPI + Python)
-- **FastAPI** - High-performance async web framework
-- **SQLAlchemy 2.0** - Modern Python ORM with async support
-- **Pydantic v2** - Data validation and serialization
-- **APScheduler** - Background task scheduling
-- **SQLite** - Lightweight database for development
+Visit the live application: **[FlyerFlutter on Vercel](https://flyerflutter.vercel.app)**
 
-### Frontend (React + Vite)
-- **React 18** - Modern UI library with hooks and context
-- **Vite** - Lightning-fast build tool and dev server
-- **Tailwind CSS** - Utility-first styling framework
-- **Lucide Icons** - Beautiful, customizable icons
-- **Axios** - HTTP client with interceptors
+## 🛠️ Technology Stack
 
-### Data Sources
-- **Google Places API** - Store locations and business information
-- **Unofficial Flipp API** - Grocery flyer data (no credentials required)
+### Frontend
+- **React 18** - Modern UI library
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **Lucide React** - Beautiful icons
+- **Axios** - HTTP client for API requests
+
+### Backend
+- **FastAPI** - Modern Python web framework
+- **Pydantic** - Data validation using Python type annotations
+- **Google Places API** - Store location data
+- **Unofficial Flipp API** - Canadian grocery flyer data
+- **Mangum** - ASGI adapter for serverless deployment
+
+### Deployment
+- **Vercel Pro** - Serverless deployment platform
+- **Vercel Functions** - Serverless API endpoints
+- **Environment Variables** - Secure API key management
 
 ## 🚀 Quick Start
 

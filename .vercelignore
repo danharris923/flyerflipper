@@ -1,0 +1,14 @@
+backend/
+docker-compose.yml
+Dockerfile
+.env
+.env.example
+*.log
+__pycache__/
+*.pyc
+node_modules/
+.git/
+README.md
+PLANNING.md
+TASK.md
+tests/
