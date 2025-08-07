@@ -1,6 +1,6 @@
 {
   "name": "flyerflutter",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Canadian Grocery Price Comparison App",
   "scripts": {
     "build": "cd frontend && npm install && npm run build && cd .. && cp -r frontend/dist .",
