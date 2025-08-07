@@ -3,13 +3,6 @@
   "name": "flyerflutter-app",
   "builds": [
     {
-      "src": "api/main.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9"
-      }
-    },
-    {
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
@@ -20,7 +13,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/main.py"
+      "dest": "https://flyerflipper-production.up.railway.app/api/$1"
     },
     {
       "src": "/assets/(.*)",
@@ -35,14 +28,9 @@
       "dest": "/dist/index.html"
     }
   ],
-  "env": {
-    "GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
-    "GOOGLE_PLACES_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w"
-  },
   "build": {
     "env": {
-      "GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
-      "GOOGLE_PLACES_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w"
+      "VITE_API_BASE_URL": "https://flyerflipper-production.up.railway.app/api"
     }
   }
 }
