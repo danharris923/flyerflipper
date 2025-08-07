@@ -1,23 +1,48 @@
 {
   "version": 2,
-  "name": "flyerflipper",
-  "functions": {
-    "api/main.py": {
-      "runtime": "python3.9"
+  "name": "flyerflutter-app",
+  "builds": [
+    {
+      "src": "api/main.py",
+      "use": "@vercel/python",
+      "config": {
+        "runtime": "python3.9"
+      }
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/api/main.py"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/dist/assets/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2))",
+      "dest": "/dist/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/dist/index.html"
     }
   ],
   "env": {
-    "GOOGLE_API_KEY": "@google_api_key",
-    "GOOGLE_PLACES_API_KEY": "@google_places_api_key"
+    "GOOGLE_API_KEY": "@google-api-key",
+    "GOOGLE_PLACES_API_KEY": "@google-places-api-key"
+  },
+  "build": {
+    "env": {
+      "GOOGLE_API_KEY": "@google-api-key",
+      "GOOGLE_PLACES_API_KEY": "@google-places-api-key"
+    }
   }
 }

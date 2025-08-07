@@ -1,0 +1,24 @@
+{
+  "name": "flyerflutter",
+  "version": "2.0.0",
+  "description": "Canadian Grocery Price Comparison App",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd .. && cp -r frontend/dist .",
+    "vercel-build": "cd frontend && npm install && npm run build && cd .. && cp -r frontend/dist .",
+    "dev": "cd frontend && npm run dev",
+    "start": "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000"
+  },
+  "keywords": [
+    "grocery",
+    "flyers",
+    "canada",
+    "price-comparison",
+    "vercel"
+  ],
+  "author": "FlyerFlutter Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danharris923/flyerflipper"
+  }
+}
