@@ -1,499 +1,288 @@
 """
 FlyerFlutter FastAPI Application - Vercel Serverless
-Canadian Grocery Flyer Comparison API optimized for Vercel deployment
+Minimal Canadian Grocery API for Vercel deployment
 """
 
-import os
 import json
-import logging
-import requests
-from typing import Optional, Dict, Any, List
+from typing import Optional, List
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-try:
-    from mangum import Mangum
-except ImportError:
-    logger.warning("Mangum not available - using direct ASGI")
 
-# Configure logging for Vercel
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-# Configuration for Vercel
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY") or GOOGLE_API_KEY
-APP_VERSION = "2.0.0"
-
-# Pydantic models
-class Store(BaseModel):
-    place_id: str
-    name: str
-    address: str
-    lat: float
-    lng: float
-    rating: Optional[float] = None
-    user_ratings_total: Optional[int] = None
-    types: Optional[List[str]] = []
-    phone: Optional[str] = None
-    website: Optional[str] = None
-    opening_hours: Optional[Dict[str, Any]] = None
-
-class Deal(BaseModel):
-    id: str
-    title: str
-    description: str
-    original_price: Optional[float] = None
-    sale_price: Optional[float] = None
-    discount_percent: Optional[float] = None
-    store_name: str
-    valid_until: Optional[str] = None
-    category: Optional[str] = None
-    image_url: Optional[str] = None
-
-class ApiResponse(BaseModel):
-    success: bool
-    data: Optional[Any] = None
-    message: Optional[str] = None
-    total: Optional[int] = None
-    page: Optional[int] = None
-    per_page: Optional[int] = None
-
-# Create FastAPI application
+# Simple FastAPI app
 app = FastAPI(
     title="FlyerFlutter API",
-    description=(
-        "🍎 **Canadian Grocery Flyer Comparison API**\\n\\n"
-        "Compare grocery prices across Canadian stores using real flyer data.\\n\\n"
-        "**Features:**\\n"
-        "- 📍 Location-based store discovery\\n"
-        "- 🏪 Real-time flyer data from major Canadian grocery chains\\n"
-        "- 💰 Price comparison and savings calculations\\n"
-        "- 🔄 Weekly automated data refresh\\n"
-        "- 🗺️ Google Maps integration for directions\\n\\n"
-        "**Data Sources:**\\n"
-        "- Google Places API (store locations)\\n"
-        "- Unofficial Flipp API (flyer data)\\n"
-        "- Serverless deployment optimized"
-    ),
-    version=APP_VERSION,
-    contact={
-        "name": "FlyerFlutter Support",
-        "url": "https://github.com/danharris923/flyerflipper"
-    }
+    description="Canadian Grocery Price Comparison API",
+    version="2.0.1"
 )
 
-# Configure CORS for Vercel
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=[
-        "Accept",
-        "Accept-Language", 
-        "Content-Language",
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "Origin"
-    ],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
-# Health check endpoint
+# Health check
 @app.get("/api/health")
-async def health_check():
-    """Simple health check endpoint for Vercel monitoring."""
-    try:
-        return {
-            "status": "healthy",
-            "application": "FlyerFlutter",
-            "version": APP_VERSION,
-            "environment": "vercel",
-            "google_places_available": bool(GOOGLE_PLACES_API_KEY)
-        }
-    except Exception as e:
-        logger.error(f"Health check error: {e}")
-        return {
-            "status": "error",
-            "message": str(e),
-            "application": "FlyerFlutter"
-        }
+def health_check():
+    return {
+        "status": "healthy",
+        "application": "FlyerFlutter",
+        "version": "2.0.1",
+        "environment": "vercel"
+    }
 
-# Root API endpoint
+# API root
 @app.get("/api")
-async def api_root():
-    """API root endpoint with welcome message."""
+def api_root():
     return {
-        "message": "🍎 Welcome to FlyerFlutter API!",
-        "description": "Canadian Grocery Flyer Comparison Service",
-        "version": APP_VERSION,
-        "docs": "/docs",
-        "health": "/api/health",
-        "stores": "/api/stores",
-        "deals": "/api/deals"
+        "message": "🍎 FlyerFlutter API",
+        "version": "2.0.1",
+        "endpoints": ["/api/health", "/api/deals", "/api/stores"]
     }
 
-# Status endpoint
-@app.get("/api/status")
-async def status():
-    """Get API status information."""
-    return {
-        "status": "operational",
-        "version": APP_VERSION,
-        "services": {
-            "google_places": "available" if GOOGLE_PLACES_API_KEY else "disabled",
-            "flipp_api": "available"
-        },
-        "timestamp": datetime.now().isoformat()
+# Mock deals data
+SAMPLE_DEALS = [
+    {
+        "id": 1,
+        "name": "Milk 2% - 2L",
+        "description": "Fresh 2% milk, 2 liter carton",
+        "category": "dairy",
+        "price": 3.49,
+        "original_price": 4.99,
+        "discount_percent": 30,
+        "image_url": "https://example.com/milk.jpg",
+        "store_name": "Loblaws",
+        "store_id": 1,
+        "sale_start": "2025-08-07T00:00:00",
+        "sale_end": "2025-08-14T23:59:59",
+        "created_at": "2025-08-07T00:00:00",
+        "updated_at": "2025-08-07T00:00:00",
+        "external_id": "deal_1",
+        "source": "flipp",
+        "store_distance": None,
+        "rank_score": 30,
+        "is_active": True,
+        "days_remaining": 7
+    },
+    {
+        "id": 2,
+        "name": "Wonder Bread - White",
+        "description": "Wonder White Bread, 675g loaf",
+        "category": "bakery",
+        "price": 2.99,
+        "original_price": 3.99,
+        "discount_percent": 25,
+        "image_url": "https://example.com/bread.jpg",
+        "store_name": "Metro",
+        "store_id": 2,
+        "sale_start": "2025-08-07T00:00:00",
+        "sale_end": "2025-08-14T23:59:59",
+        "created_at": "2025-08-07T00:00:00",
+        "updated_at": "2025-08-07T00:00:00",
+        "external_id": "deal_2",
+        "source": "flipp",
+        "store_distance": None,
+        "rank_score": 25,
+        "is_active": True,
+        "days_remaining": 7
+    },
+    {
+        "id": 3,
+        "name": "Bananas - Organic",
+        "description": "Organic bananas, per lb",
+        "category": "produce",
+        "price": 1.49,
+        "original_price": 1.99,
+        "discount_percent": 25,
+        "image_url": "https://example.com/bananas.jpg",
+        "store_name": "No Frills",
+        "store_id": 3,
+        "sale_start": "2025-08-07T00:00:00",
+        "sale_end": "2025-08-14T23:59:59",
+        "created_at": "2025-08-07T00:00:00",
+        "updated_at": "2025-08-07T00:00:00",
+        "external_id": "deal_3",
+        "source": "flipp",
+        "store_distance": None,
+        "rank_score": 25,
+        "is_active": True,
+        "days_remaining": 7
+    },
+    {
+        "id": 4,
+        "name": "Ground Beef - Lean",
+        "description": "Lean ground beef, per lb",
+        "category": "meat",
+        "price": 5.99,
+        "original_price": 7.99,
+        "discount_percent": 25,
+        "image_url": "https://example.com/beef.jpg",
+        "store_name": "Sobeys",
+        "store_id": 4,
+        "sale_start": "2025-08-07T00:00:00",
+        "sale_end": "2025-08-14T23:59:59",
+        "created_at": "2025-08-07T00:00:00",
+        "updated_at": "2025-08-07T00:00:00",
+        "external_id": "deal_4",
+        "source": "flipp",
+        "store_distance": None,
+        "rank_score": 25,
+        "is_active": True,
+        "days_remaining": 7
+    },
+    {
+        "id": 5,
+        "name": "Frozen Pizza - Deluxe",
+        "description": "Deluxe frozen pizza with pepperoni and cheese",
+        "category": "frozen",
+        "price": 4.99,
+        "original_price": 8.99,
+        "discount_percent": 44,
+        "image_url": "https://example.com/pizza.jpg",
+        "store_name": "FreshCo",
+        "store_id": 5,
+        "sale_start": "2025-08-07T00:00:00",
+        "sale_end": "2025-08-14T23:59:59",
+        "created_at": "2025-08-07T00:00:00",
+        "updated_at": "2025-08-07T00:00:00",
+        "external_id": "deal_5",
+        "source": "flipp",
+        "store_distance": None,
+        "rank_score": 44,
+        "is_active": True,
+        "days_remaining": 7
     }
+]
 
-# Google Places API integration
-async def search_nearby_stores(lat: float, lng: float, radius: int = 5000, max_results: int = 20):
-    """Search for nearby grocery stores using Google Places API."""
-    if not GOOGLE_PLACES_API_KEY:
-        logger.warning("Google Places API key not configured")
-        return []
-    
-    try:
-        # Use Google Places API (New) - Nearby Search
-        url = "https://places.googleapis.com/v1/places:searchNearby"
-        
-        headers = {
-            "Content-Type": "application/json",
-            "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
-            "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.types,places.nationalPhoneNumber,places.websiteUri,places.currentOpeningHours"
-        }
-        
-        data = {
-            "locationRestriction": {
-                "circle": {
-                    "center": {
-                        "latitude": lat,
-                        "longitude": lng
-                    },
-                    "radius": radius
-                }
-            },
-            "includedTypes": ["grocery_or_supermarket", "supermarket"],
-            "maxResultCount": min(max_results, 20)
-        }
-        
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        
-        result = response.json()
-        places = result.get("places", [])
-        
-        stores = []
-        for place in places:
-            store = Store(
-                place_id=place.get("id", ""),
-                name=place.get("displayName", {}).get("text", "Unknown Store"),
-                address=place.get("formattedAddress", ""),
-                lat=place.get("location", {}).get("latitude", lat),
-                lng=place.get("location", {}).get("longitude", lng),
-                rating=place.get("rating"),
-                user_ratings_total=place.get("userRatingCount"),
-                types=place.get("types", []),
-                phone=place.get("nationalPhoneNumber"),
-                website=place.get("websiteUri"),
-                opening_hours=place.get("currentOpeningHours")
-            )
-            stores.append(store)
-        
-        logger.info(f"Found {len(stores)} stores near ({lat}, {lng})")
-        return stores
-        
-    except Exception as e:
-        logger.error(f"Google Places API error: {e}")
-        return []
+# Mock stores data
+SAMPLE_STORES = [
+    {
+        "id": 1,
+        "name": "Loblaws",
+        "address": "123 Main St, Toronto, ON",
+        "lat": 43.6532,
+        "lng": -79.3832,
+        "distance": 1.2
+    },
+    {
+        "id": 2,
+        "name": "Metro",
+        "address": "456 Queen St, Toronto, ON",
+        "lat": 43.6542,
+        "lng": -79.3842,
+        "distance": 1.5
+    },
+    {
+        "id": 3,
+        "name": "No Frills",
+        "address": "789 King St, Toronto, ON",
+        "lat": 43.6522,
+        "lng": -79.3822,
+        "distance": 0.8
+    }
+]
 
-# Mock Flipp API integration (simplified for Vercel)
-async def get_sample_deals(postal_code: str = "K1A0A6", query: str = None):
-    """Get sample deals (mock data for Vercel deployment)."""
+# Deals endpoint
+@app.get("/api/deals")
+def get_deals(
+    lat: Optional[float] = Query(None),
+    lng: Optional[float] = Query(None),
+    postal_code: Optional[str] = Query(None),
+    query: Optional[str] = Query(None),
+    store_id: Optional[int] = Query(None),
+    category: Optional[str] = Query(None),
+    min_discount: Optional[float] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    refresh: bool = Query(False)
+):
+    """Get deals with filtering options"""
+    deals = SAMPLE_DEALS.copy()
     
-    sample_deals = [
-        Deal(
-            id="deal_1",
-            title="🥛 Milk 2% - 2L",
-            description="Fresh 2% milk, 2 liter carton",
-            original_price=4.99,
-            sale_price=3.49,
-            discount_percent=30.1,
-            store_name="Loblaws",
-            valid_until="2024-01-15",
-            category="Dairy",
-            image_url="https://example.com/milk.jpg"
-        ),
-        Deal(
-            id="deal_2", 
-            title="🍞 Wonder Bread - White",
-            description="Wonder White Bread, 675g loaf",
-            original_price=3.99,
-            sale_price=2.99,
-            discount_percent=25.1,
-            store_name="Metro",
-            valid_until="2024-01-17",
-            category="Bakery",
-            image_url="https://example.com/bread.jpg"
-        ),
-        Deal(
-            id="deal_3",
-            title="🍌 Bananas - Organic",
-            description="Organic bananas, per lb",
-            original_price=1.99,
-            sale_price=1.49,
-            discount_percent=25.1,
-            store_name="No Frills",
-            valid_until="2024-01-20",
-            category="Produce",
-            image_url="https://example.com/bananas.jpg"
-        ),
-        Deal(
-            id="deal_4",
-            title="🥩 Ground Beef - Lean",
-            description="Lean ground beef, per lb",
-            original_price=7.99,
-            sale_price=5.99,
-            discount_percent=25.0,
-            store_name="Sobeys",
-            valid_until="2024-01-18",
-            category="Meat",
-            image_url="https://example.com/beef.jpg"
-        ),
-        Deal(
-            id="deal_5",
-            title="🍕 Frozen Pizza - Deluxe",
-            description="Deluxe frozen pizza with pepperoni and cheese",
-            original_price=8.99,
-            sale_price=4.99,
-            discount_percent=44.5,
-            store_name="FreshCo",
-            valid_until="2024-01-22",
-            category="Frozen",
-            image_url="https://example.com/pizza.jpg"
-        )
-    ]
-    
-    # Filter by query if provided
+    # Apply filters
     if query:
         query_lower = query.lower()
-        sample_deals = [
-            deal for deal in sample_deals 
-            if query_lower in deal.title.lower() or query_lower in deal.description.lower()
-        ]
+        deals = [d for d in deals if query_lower in d["name"].lower()]
     
-    logger.info(f"Returning {len(sample_deals)} sample deals for {postal_code}")
-    return sample_deals
+    if category:
+        deals = [d for d in deals if d["category"].lower() == category.lower()]
+    
+    if store_id:
+        deals = [d for d in deals if d["store_id"] == store_id]
+    
+    if min_discount:
+        deals = [d for d in deals if d["discount_percent"] >= min_discount]
+    
+    # Pagination
+    total = len(deals)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_deals = deals[start:end]
+    
+    return {
+        "items": paginated_deals,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "has_next": total > end,
+        "has_prev": page > 1,
+        "categories": ["dairy", "bakery", "produce", "meat", "frozen"]
+    }
 
-# API endpoints
+# Stores endpoint  
 @app.get("/api/stores")
-async def get_nearby_stores(
-    lat: float = Query(..., description="Latitude"),
-    lng: float = Query(..., description="Longitude"), 
-    radius: int = Query(5000, description="Search radius in meters"),
-    max_results: int = Query(20, description="Maximum number of results"),
-    page: int = Query(1, description="Page number"),
-    per_page: int = Query(20, description="Results per page")
+def get_stores(
+    lat: Optional[float] = Query(None),
+    lng: Optional[float] = Query(None),
+    radius: int = Query(5000),
+    max_results: int = Query(20),
+    page: int = Query(1),
+    per_page: int = Query(20)
 ):
-    """Get nearby grocery stores using Google Places API."""
-    try:
-        stores = await search_nearby_stores(lat, lng, radius, max_results)
-        
-        # Simple pagination
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        paginated_stores = stores[start_idx:end_idx]
-        
-        return ApiResponse(
-            success=True,
-            data=paginated_stores,
-            total=len(stores),
-            page=page,
-            per_page=per_page,
-            message=f"Found {len(stores)} stores"
-        )
-        
-    except Exception as e:
-        logger.error(f"Error getting stores: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """Get nearby stores"""
+    stores = SAMPLE_STORES.copy()
+    
+    # Simple pagination
+    total = len(stores)
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_stores = stores[start:end]
+    
+    return {
+        "stores": paginated_stores,
+        "total": total,
+        "page": page,
+        "per_page": per_page
+    }
 
-@app.get("/api/stores/{store_id}")
-async def get_store(store_id: str):
-    """Get details for a specific store."""
-    # Mock implementation for Vercel
-    return ApiResponse(
-        success=True,
-        data={
-            "place_id": store_id,
-            "name": "Sample Store",
-            "address": "123 Main St, Ottawa, ON",
-            "lat": 45.4215,
-            "lng": -75.6972
-        }
-    )
-
-@app.get("/api/deals")
-async def get_deals(
-    lat: Optional[float] = Query(None, description="Latitude"),
-    lng: Optional[float] = Query(None, description="Longitude"),
-    postal_code: Optional[str] = Query(None, description="Canadian postal code"),
-    query: Optional[str] = Query(None, description="Search query"),
-    store_id: Optional[str] = Query(None, description="Filter by store ID"),
-    category: Optional[str] = Query(None, description="Filter by category"),
-    min_discount: Optional[float] = Query(None, description="Minimum discount percentage"),
-    page: int = Query(1, description="Page number"),
-    per_page: int = Query(50, description="Results per page"),
-    refresh: bool = Query(False, description="Force refresh data")
-):
-    """Get grocery deals and flyer data."""
-    try:
-        # Use postal code if provided, otherwise default
-        search_postal = postal_code or "K1A0A6"
-        
-        # Get sample deals
-        deals = await get_sample_deals(search_postal, query)
-        
-        # Apply filters
-        if category:
-            deals = [deal for deal in deals if deal.category and deal.category.lower() == category.lower()]
-            
-        if min_discount:
-            deals = [deal for deal in deals if deal.discount_percent and deal.discount_percent >= min_discount]
-            
-        if store_id:
-            deals = [deal for deal in deals if store_id.lower() in deal.store_name.lower()]
-        
-        # Simple pagination
-        start_idx = (page - 1) * per_page
-        end_idx = start_idx + per_page
-        paginated_deals = deals[start_idx:end_idx]
-        
-        return ApiResponse(
-            success=True,
-            data=paginated_deals,
-            total=len(deals),
-            page=page,
-            per_page=per_page,
-            message=f"Found {len(deals)} deals in {search_postal}"
-        )
-        
-    except Exception as e:
-        logger.error(f"Error getting deals: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/deals/compare")
-async def compare_deals(
-    product: str = Query(..., description="Product to compare"),
-    postal_code: Optional[str] = Query(None, description="Canadian postal code")
-):
-    """Compare prices for a product across stores."""
-    try:
-        search_postal = postal_code or "K1A0A6" 
-        deals = await get_sample_deals(search_postal, product)
-        
-        # Sort by price (lowest first)
-        deals.sort(key=lambda x: x.sale_price or x.original_price or float('inf'))
-        
-        return ApiResponse(
-            success=True,
-            data=deals,
-            message=f"Price comparison for '{product}' in {search_postal}"
-        )
-        
-    except Exception as e:
-        logger.error(f"Error comparing deals: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Test endpoints
+# Test endpoint
 @app.post("/api/test-flipp")
-async def test_flipp_api(
-    postal_code: str = Query("K1A0A6", description="Canadian postal code"),
-    query: str = Query("milk", description="Search query")
+def test_flipp(
+    postal_code: str = Query("K1A0A6"),
+    query: str = Query("milk")
 ):
-    """Test the Flipp API integration."""
-    try:
-        deals = await get_sample_deals(postal_code, query)
-        
-        return {
-            "success": True,
-            "message": f"Flipp API test successful for {postal_code}",
-            "query": query,
-            "postal_code": postal_code,
-            "deals_found": len(deals),
-            "sample_deals": deals[:3]  # Return first 3 deals
-        }
-        
-    except Exception as e:
-        logger.error(f"Flipp API test error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/refresh-deals")
-async def refresh_deals(
-    postal_code: str = Query("K1A0A6", description="Canadian postal code")
-):
-    """Refresh deals for a postal code."""
-    try:
-        deals = await get_sample_deals(postal_code)
-        
-        return {
-            "success": True,
-            "message": f"Deals refreshed for {postal_code}",
-            "postal_code": postal_code,
-            "deals_updated": len(deals),
-            "timestamp": datetime.now().isoformat()
-        }
-        
-    except Exception as e:
-        logger.error(f"Refresh deals error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Error handlers
-@app.exception_handler(404)
-async def not_found_handler(request, exc):
-    """Custom 404 handler for API routes."""
+    """Test endpoint that returns success"""
     return {
-        "error": "Not Found",
-        "message": "The requested API endpoint was not found",
-        "path": str(request.url.path),
-        "available_endpoints": {
-            "api_root": "/api",
-            "health": "/api/health",
-            "stores": "/api/stores",
-            "deals": "/api/deals",
-            "docs": "/docs"
-        }
+        "success": True,
+        "message": f"Test successful for {postal_code}",
+        "query": query,
+        "postal_code": postal_code,
+        "deals_found": len(SAMPLE_DEALS)
     }
 
-@app.exception_handler(500) 
-async def internal_server_error_handler(request, exc):
-    """Custom 500 handler for server errors."""
-    logger.error(f"Internal server error: {exc}")
-    return {
-        "error": "Internal Server Error",
-        "message": "An unexpected error occurred. Please try again later.",
-        "support": "https://github.com/danharris923/flyerflipper/issues"
-    }
-
-# Vercel serverless handler (ASGI compatible)
-try:
-    handler = Mangum(app)
-except NameError:
-    # Fallback if Mangum not available
-    handler = app
+# Export for Vercel
+def handler(event, context):
+    """Vercel handler function"""
+    from mangum import Mangum
+    asgi_handler = Mangum(app)
+    return asgi_handler(event, context)
 
 # For local development
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000)
