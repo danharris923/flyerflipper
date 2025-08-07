@@ -31,16 +31,5 @@
       "src": "/(.*)",
       "dest": "/dist/index.html"
     }
-  ],
-  "env": {
-    "GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
-    "GOOGLE_PLACES_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w"
-  },
-  "build": {
-    "env": {
-      "VITE_GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
-      "GOOGLE_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w",
-      "GOOGLE_PLACES_API_KEY": "AIzaSyCJg99ZFUlfdh6WX6bQ5sprAF1wvR7ib-w"
-    }
-  }
+  ]
 }
