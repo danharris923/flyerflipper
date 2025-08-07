@@ -13,7 +13,10 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from mangum import Mangum
+try:
+    from mangum import Mangum
+except ImportError:
+    logger.warning("Mangum not available - using direct ASGI")
 
 # Configure logging for Vercel
 logging.basicConfig(
@@ -106,13 +109,21 @@ app.add_middleware(
 @app.get("/api/health")
 async def health_check():
     """Simple health check endpoint for Vercel monitoring."""
-    return {
-        "status": "healthy",
-        "application": "FlyerFlutter",
-        "version": APP_VERSION,
-        "environment": "vercel",
-        "google_places_available": bool(GOOGLE_PLACES_API_KEY)
-    }
+    try:
+        return {
+            "status": "healthy",
+            "application": "FlyerFlutter",
+            "version": APP_VERSION,
+            "environment": "vercel",
+            "google_places_available": bool(GOOGLE_PLACES_API_KEY)
+        }
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "application": "FlyerFlutter"
+        }
 
 # Root API endpoint
 @app.get("/api")
@@ -471,7 +482,11 @@ async def internal_server_error_handler(request, exc):
     }
 
 # Vercel serverless handler (ASGI compatible)
-handler = Mangum(app)
+try:
+    handler = Mangum(app)
+except NameError:
+    # Fallback if Mangum not available
+    handler = app
 
 # For local development
 if __name__ == "__main__":
