@@ -181,10 +181,41 @@ async def get_deals(
     
     Can search by location, postal code, product query, store, category, or discount level.
     """
-    logger.info(f"Getting deals - postal_code: {postal_code}, flipp_service: {flipp_service is not None}")
+    logger.info(f"Getting deals - postal_code: {postal_code}, lat: {lat}, lng: {lng}, flipp_service: {flipp_service is not None}")
     
     try:
-        # Always fetch real-time deals when postal code is provided
+        # Convert coordinates to postal code if needed
+        if not postal_code and lat is not None and lng is not None:
+            try:
+                # Use Google Geocoding to get postal code from coordinates
+                import os
+                google_api_key = os.getenv("GOOGLE_API_KEY")
+                if google_api_key:
+                    import httpx
+                    async with httpx.AsyncClient() as client:
+                        geocoding_url = f"https://maps.googleapis.com/maps/api/geocode/json"
+                        params = {
+                            "latlng": f"{lat},{lng}",
+                            "key": google_api_key,
+                            "region": "CA"  # Canada
+                        }
+                        response = await client.get(geocoding_url, params=params)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if data.get("results"):
+                                # Extract postal code from address components
+                                for result in data["results"]:
+                                    for component in result.get("address_components", []):
+                                        if "postal_code" in component.get("types", []):
+                                            postal_code = component.get("short_name", "").replace(" ", "")
+                                            logger.info(f"Converted coordinates {lat},{lng} to postal code: {postal_code}")
+                                            break
+                                    if postal_code:
+                                        break
+            except Exception as geocoding_error:
+                logger.warning(f"Failed to convert coordinates to postal code: {geocoding_error}")
+        
+        # Always fetch real-time deals when postal code is available
         if postal_code and flipp_service:
             try:
                 logger.info(f"Fetching real-time deals for postal code: {postal_code}")
