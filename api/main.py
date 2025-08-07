@@ -276,11 +276,8 @@ def test_flipp(
     }
 
 # Export for Vercel
-def handler(event, context):
-    """Vercel handler function"""
-    from mangum import Mangum
-    asgi_handler = Mangum(app)
-    return asgi_handler(event, context)
+from mangum import Mangum
+handler = Mangum(app, lifespan="off")
 
 # For local development
 if __name__ == "__main__":
