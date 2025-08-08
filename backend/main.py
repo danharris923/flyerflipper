@@ -82,9 +82,9 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Shutdown error: {e}")
 
 
-# Create FastAPI application
+# Create FastAPI application  
 app = FastAPI(
-    title="FlyerFlutter API",
+    title="FlyerFlutter API v1.1",
     description=(
         "🍎 **Canadian Grocery Flyer Comparison API**\n\n"
         "Compare grocery prices across Canadian stores using real flyer data.\n\n"

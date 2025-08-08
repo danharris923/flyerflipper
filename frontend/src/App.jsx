@@ -225,13 +225,19 @@ export default function App() {
         });
         setStores(storesData.stores || []);
       } else if (userLocation.postalCode) {
-        // Use postal code
-        const storesData = await apiService.getNearbyStores({
-          postal_code: userLocation.postalCode,
-          radius: 10000, // 10km in meters
-          maxResults: 20
-        });
-        setStores(storesData.stores || []);
+        // Use postal code - with fallback for backend compatibility
+        try {
+          const storesData = await apiService.getNearbyStores({
+            postal_code: userLocation.postalCode,
+            radius: 10000, // 10km in meters
+            maxResults: 20
+          });
+          setStores(storesData.stores || []);
+        } catch (error) {
+          console.warn('Postal code stores API not yet deployed, skipping stores:', error);
+          // Fallback: don't load stores for postal code until backend is updated
+          setStores([]);
+        }
       } else {
         // No location data available
         setStores([]);
