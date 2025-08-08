@@ -33,13 +33,20 @@ export default function LocationDetector({ onLocationDetected, className = '' })
     }
   }, [location, onLocationDetected]);
 
+  // Reset manual entry when component mounts
+  useEffect(() => {
+    setManualEntry(false);
+    setPostalCode('');
+    setPostalCodeError('');
+  }, []);
+
   // Canadian postal code validation
   const validatePostalCode = (code) => {
     const canadianPostalRegex = /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/i;
     return canadianPostalRegex.test(code.replace(/\s/g, ''));
   };
 
-  const handlePostalCodeSubmit = (e) => {
+  const handlePostalCodeSubmit = async (e) => {
     e.preventDefault();
     const cleanCode = postalCode.replace(/\s/g, '').toUpperCase();
     
@@ -50,16 +57,21 @@ export default function LocationDetector({ onLocationDetected, className = '' })
 
     setPostalCodeError('');
     
-    // For postal code entry, we'll need to geocode it
-    // For now, we'll create a location object with just the postal code
+    // Format postal code with space for display
+    const formattedCode = cleanCode.slice(0, 3) + ' ' + cleanCode.slice(3);
+    
+    // Create location object with postal code
+    // The backend will handle geocoding if needed
     const postalLocation = {
       postalCode: cleanCode,
+      city: `Postal Code: ${formattedCode}`,
       timestamp: Date.now(),
       source: 'postal_code'
     };
 
     onLocationDetected?.(postalLocation);
     setManualEntry(false);
+    setPostalCode('');
   };
 
   const handleLocationRequest = async () => {
@@ -170,19 +182,25 @@ export default function LocationDetector({ onLocationDetected, className = '' })
                 Location detected
               </p>
               <p className="text-xs text-green-600">
-                {location.postalCode ? `${location.postalCode}` : `${location.lat?.toFixed(4)}, ${location.lng?.toFixed(4)}`}
+                {location.postalCode ? 
+                  `Postal Code: ${location.postalCode.slice(0,3)} ${location.postalCode.slice(3)}` : 
+                  location.city || `${location.lat?.toFixed(4)}, ${location.lng?.toFixed(4)}`
+                }
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setManualEntry(true)}
+              onClick={() => {
+                setManualEntry(true);
+                setPostalCode('');
+              }}
               className="text-xs text-green-700 hover:text-green-800 px-2 py-1 rounded hover:bg-green-100 transition-colors"
             >
               Change
             </button>
-            {needsRefresh() && (
+            {needsRefresh() && location.source !== 'postal_code' && (
               <button
                 onClick={handleLocationRequest}
                 disabled={loading}

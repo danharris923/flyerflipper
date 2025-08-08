@@ -256,7 +256,14 @@ export default function App() {
   };
 
   const handleLocationChange = () => {
+    // Clear current location to allow re-selection
+    setUserLocation(null);
+    localStorage.removeItem('userLocation');
     setShowLocationDetector(true);
+    // Clear any existing data
+    setStores([]);
+    setDeals([]);
+    setError(null);
   };
 
   const handleFilterToggle = () => {
