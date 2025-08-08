@@ -220,7 +220,7 @@ export default function App() {
         const storesData = await apiService.getNearbyStores({
           lat: userLocation.lat,
           lng: userLocation.lng,
-          radius: 10000, // 10km in meters
+          radius: 20000, // 20km in meters
           maxResults: 20
         });
         setStores(storesData.stores || []);
@@ -229,7 +229,7 @@ export default function App() {
         try {
           const storesData = await apiService.getNearbyStores({
             postal_code: userLocation.postalCode,
-            radius: 10000, // 10km in meters
+            radius: 20000, // 20km in meters
             maxResults: 20
           });
           setStores(storesData.stores || []);

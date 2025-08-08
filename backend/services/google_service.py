@@ -56,7 +56,9 @@ class GoogleService:
         self.api_key = api_key or settings.GOOGLE_API_KEY
         
         if not self.api_key:
-            logger.warning("Google API key not provided. Google Places functionality will be disabled.")
+            import os
+            logger.error(f"Google API key not provided! Environment variables available: GOOGLE_API_KEY={os.getenv('GOOGLE_API_KEY', 'NOT_SET')[:10] if os.getenv('GOOGLE_API_KEY') else 'NOT_SET'}")
+            logger.error("Google Places functionality will be disabled. Please set GOOGLE_API_KEY environment variable.")
             self.api_key = None
             self.enabled = False
         else:
@@ -97,20 +99,10 @@ class GoogleService:
             ValueError: If coordinates are invalid
         """
         if not self.enabled:
-            logger.warning("Google Places API is disabled - returning mock data")
-            return [
-                {
-                    "place_id": "mock_store_1",
-                    "name": "Sample Grocery Store",
-                    "address": "123 Main St, Sample City",
-                    "lat": lat + 0.001,
-                    "lng": lng + 0.001,
-                    "types": ["grocery_store"],
-                    "rating": 4.2,
-                    "phone": "+1-555-0123",
-                    "website": "https://example.com"
-                }
-            ]
+            logger.error("Google Places API is disabled - no API key configured!")
+            # Instead of returning fake data, try a basic search without auth
+            # This will likely fail but gives a better error message
+            raise ValueError("Google API key not configured. Cannot search for real stores.")
         
         if not (-90 <= lat <= 90):
             raise ValueError("Latitude must be between -90 and 90")

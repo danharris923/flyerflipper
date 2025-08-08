@@ -32,7 +32,7 @@ async def get_nearby_stores(
     lat: Optional[float] = Query(None, ge=-90, le=90, description="Latitude coordinate"),
     lng: Optional[float] = Query(None, ge=-180, le=180, description="Longitude coordinate"),
     postal_code: Optional[str] = Query(None, description="Canadian postal code (alternative to lat/lng)"),
-    radius: int = Query(5000, ge=100, le=50000, description="Search radius in meters"),
+    radius: int = Query(20000, ge=100, le=50000, description="Search radius in meters (default 20km)"),
     max_results: int = Query(20, ge=1, le=100, description="Maximum number of results"),
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(20, ge=1, le=100, description="Items per page"),
