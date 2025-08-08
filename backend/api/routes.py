@@ -273,11 +273,20 @@ async def get_deals(
         # Define store type mapping for filtering
         STORE_TYPE_MAPPING = {
             'grocery': [
-                'Loblaws', 'No Frills', 'Metro', 'Sobeys', 'FreshCo', 'Food Basics',
-                'Walmart', 'Costco', 'Save-On-Foods', 'Real Canadian Superstore',
-                'IGA', 'Maxi', 'Provigo', 'Independent', 'M&M Food Market',
-                'Farm Boy', 'Valu-mart', 'Your Independent Grocer', 'Zehrs',
-                'Fortinos', 'Dominion', 'Atlantic Superstore', 'Extra Foods'
+                # Major chains
+                'Safeway', 'Sobeys', 'Loblaws', 'No Frills', 'Metro', 'FreshCo', 'Food Basics',
+                'Walmart', 'Costco', 'Real Canadian Superstore', 'Save-On-Foods',
+                # Regional chains
+                'IGA', 'Maxi', 'Provigo', 'Independent', 'Your Independent Grocer',
+                'Farm Boy', 'Valu-mart', 'Zehrs', 'Fortinos', 
+                'Atlantic Superstore', 'Extra Foods', 'Dominion',
+                # Discount chains
+                'Giant Tiger', 'FreshCo', 'No Frills', 'Food Basics',
+                # Specialty
+                'Whole Foods', 'T&T Supermarket', 'Longos', 'M&M Food Market',
+                'Rabba', 'Pusateri', 'Nations Fresh Foods', 'Galleria Supermarket',
+                # Quebec chains
+                'Super C', 'Avril', 'Rachelle-Béry', 'Marché Richelieu'
             ],
             'electronics': [
                 'Best Buy', 'The Source', 'Staples', 'Canada Computers', 'Memory Express',

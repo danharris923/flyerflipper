@@ -20,17 +20,22 @@ import {
 
 // Store categories and price match policies
 const STORE_INFO = {
-  // Grocery Stores
+  // Major Grocery Chains
+  'Safeway': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches local competitors with flyer' },
+  'Sobeys': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches with flyer proof' },
   'Loblaws': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches competitors within 5km' },
   'No Frills': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches all major competitors' },
   'Metro': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches identical items only' },
-  'Sobeys': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches with flyer proof' },
   'FreshCo': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches all competitors' },
   'Food Basics': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches identical items' },
   'Walmart': { category: 'grocery', priceMatch: true, matchPolicy: 'Ad match on identical items' },
   'Costco': { category: 'grocery', priceMatch: false, matchPolicy: 'No price matching' },
   'Save-On-Foods': { category: 'grocery', priceMatch: true, matchPolicy: 'More rewards points instead' },
   'Real Canadian Superstore': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches competitors' },
+  'Giant Tiger': { category: 'grocery', priceMatch: true, matchPolicy: 'Beats competitor prices by 10%' },
+  'IGA': { category: 'grocery', priceMatch: true, matchPolicy: 'Matches local store prices' },
+  'Whole Foods': { category: 'grocery', priceMatch: true, matchPolicy: 'Prime member price matching' },
+  'T&T Supermarket': { category: 'grocery', priceMatch: false, matchPolicy: 'No price matching' },
   
   // Electronics
   'Best Buy': { category: 'electronics', priceMatch: true, matchPolicy: 'Matches authorized dealers' },
@@ -48,47 +53,123 @@ const STORE_INFO = {
   'Rexall': { category: 'pharmacy', priceMatch: false, matchPolicy: 'No price matching' }
 };
 
-// Improved product matching for groceries
+// COMPLETELY REWRITTEN: Smart grocery product matching
 function calculateSimilarity(str1, str2) {
+  if (!str1 || !str2) return 0;
+  
   const s1 = str1.toLowerCase();
   const s2 = str2.toLowerCase();
   
-  // Exact match bonus
+  // Exact match
   if (s1 === s2) return 1.0;
   
-  // Remove common grocery words that don't matter for comparison
-  const stopWords = ['fresh', 'organic', 'natural', 'great', 'value', 'brand', 'quality', 'premium', 'select'];
-  
-  const cleanString = (str) => {
-    return str.replace(/\b(lb|kg|g|oz|ml|l|pack|each|ea)\b/g, '') // Remove units
-              .replace(/\d+(\.\d+)?/g, '') // Remove numbers
-              .split(/\s+/)
-              .filter(word => word.length > 2 && !stopWords.includes(word))
-              .join(' ')
-              .trim();
+  // Extract the CORE PRODUCT from the marketing fluff
+  const extractCoreProduct = (str) => {
+    // Common product patterns
+    const patterns = {
+      // Meats
+      'chicken': /\b(chicken|poultry)\b/i,
+      'beef': /\b(beef|steak|roast|ground beef)\b/i,
+      'pork': /\b(pork|bacon|ham|sausage)\b/i,
+      'fish': /\b(salmon|tuna|fish|cod|tilapia|halibut)\b/i,
+      
+      // Produce
+      'apple': /\b(apple|apples)\b/i,
+      'banana': /\b(banana|bananas)\b/i,
+      'carrot': /\b(carrot|carrots)\b/i,
+      'potato': /\b(potato|potatoes)\b/i,
+      'tomato': /\b(tomato|tomatoes)\b/i,
+      'lettuce': /\b(lettuce|romaine|iceberg)\b/i,
+      'onion': /\b(onion|onions)\b/i,
+      
+      // Dairy
+      'milk': /\b(milk)\b/i,
+      'cheese': /\b(cheese|cheddar|mozzarella|swiss)\b/i,
+      'yogurt': /\b(yogurt|yoghurt)\b/i,
+      'butter': /\b(butter|margarine)\b/i,
+      'eggs': /\b(eggs?)\b/i,
+      
+      // Bakery
+      'bread': /\b(bread|loaf|baguette)\b/i,
+      'bagel': /\b(bagels?)\b/i,
+      'muffin': /\b(muffins?)\b/i,
+      
+      // Pantry
+      'pasta': /\b(pasta|spaghetti|penne|macaroni)\b/i,
+      'rice': /\b(rice)\b/i,
+      'cereal': /\b(cereal|corn flakes|cheerios)\b/i,
+      'soup': /\b(soup)\b/i,
+      'beans': /\b(beans?|lentils?)\b/i,
+      
+      // Beverages
+      'coffee': /\b(coffee)\b/i,
+      'tea': /\b(tea)\b/i,
+      'juice': /\b(juice)\b/i,
+      'water': /\b(water)\b/i,
+      'soda': /\b(pop|soda|cola|pepsi|coke)\b/i
+    };
+    
+    // Check each pattern
+    for (const [product, pattern] of Object.entries(patterns)) {
+      if (pattern.test(str)) {
+        return product;
+      }
+    }
+    
+    // Fallback: extract the main noun (usually the product)
+    const cleaned = str
+      .replace(/\b\d+(\.\d+)?\s*(kg|g|lb|oz|ml|l|pack|pk|ea|each)\b/gi, '') // Remove quantities
+      .replace(/\b(fresh|frozen|organic|natural|premium|select|choice|grade|quality|value|great|pc|no name|compliments)\b/gi, '') // Remove modifiers
+      .replace(/[^\w\s]/g, ' ') // Remove special chars
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Return the longest meaningful word (likely the product)
+    const words = cleaned.split(' ').filter(w => w.length > 2);
+    return words.sort((a, b) => b.length - a.length)[0] || cleaned;
   };
   
-  const clean1 = cleanString(s1);
-  const clean2 = cleanString(s2);
+  const core1 = extractCoreProduct(s1);
+  const core2 = extractCoreProduct(s2);
   
-  // Direct substring matching for core products
-  if (clean1.includes(clean2) || clean2.includes(clean1)) {
-    return 0.9;
+  // If core products match, it's a good match
+  if (core1 && core2) {
+    if (core1 === core2) return 0.95;
+    if (core1.includes(core2) || core2.includes(core1)) return 0.8;
   }
   
-  // Word overlap scoring
-  const words1 = clean1.split(/\s+/);
-  const words2 = clean2.split(/\s+/);
+  // Check if they're in the same category at least
+  const getCategory = (str) => {
+    const lowerStr = str.toLowerCase();
+    if (/\b(chicken|beef|pork|meat|steak|ground|bacon|sausage)\b/.test(lowerStr)) return 'meat';
+    if (/\b(milk|cheese|yogurt|dairy|butter|cream)\b/.test(lowerStr)) return 'dairy';
+    if (/\b(bread|bagel|muffin|cake|bakery|donut)\b/.test(lowerStr)) return 'bakery';
+    if (/\b(apple|banana|orange|fruit|berry|grape)\b/.test(lowerStr)) return 'fruit';
+    if (/\b(carrot|potato|lettuce|vegetable|broccoli|tomato)\b/.test(lowerStr)) return 'vegetable';
+    if (/\b(cereal|pasta|rice|grain|oat)\b/.test(lowerStr)) return 'grain';
+    if (/\b(juice|water|soda|pop|drink|beverage)\b/.test(lowerStr)) return 'beverage';
+    return null;
+  };
   
-  let matches = 0;
-  words1.forEach(word1 => {
-    words2.forEach(word2 => {
-      if (word1 === word2) matches += 1.0; // Exact word match
-      else if (word1.includes(word2) || word2.includes(word1)) matches += 0.7; // Partial match
-    });
+  const cat1 = getCategory(s1);
+  const cat2 = getCategory(s2);
+  
+  // Different categories = not comparable
+  if (cat1 && cat2 && cat1 !== cat2) return 0;
+  
+  // Same category but different products = low similarity
+  if (cat1 && cat2 && cat1 === cat2) return 0.3;
+  
+  // Last resort: basic word matching
+  const words1 = s1.split(/\s+/).filter(w => w.length > 2);
+  const words2 = s2.split(/\s+/).filter(w => w.length > 2);
+  
+  let matchCount = 0;
+  words1.forEach(w1 => {
+    if (words2.some(w2 => w1 === w2)) matchCount++;
   });
   
-  return matches / Math.max(words1.length, words2.length, 1);
+  return matchCount / Math.max(words1.length, words2.length, 1) * 0.5;
 }
 
 function getStoreInfo(storeName) {
@@ -133,9 +214,9 @@ export default function ProductComparison({
     const similar = allDeals.filter(deal => {
       if (deal.id === product.id) return true; // Include original
       
-      // Calculate name similarity (higher threshold for better matching)
+      // Calculate name similarity (strict threshold for accurate matching)
       const similarity = calculateSimilarity(deal.name || '', product.name || '');
-      if (similarity > 0.6) return true;
+      if (similarity > 0.75) return true;
       
       // Check category match
       if (deal.category === product.category && product.category) return true;
