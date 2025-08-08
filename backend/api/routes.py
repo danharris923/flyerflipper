@@ -4,6 +4,7 @@ Defines all REST API endpoints for the Canadian grocery flyer comparison app.
 """
 
 import logging
+import httpx
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -56,7 +57,13 @@ async def get_nearby_stores(
         if not search_lat or not search_lng:
             if postal_code and google_service:
                 try:
-                    # Geocode postal code to coordinates
+                    # Geocode postal code to coordinates  
+                    if not google_service or not google_service.api_key:
+                        raise HTTPException(
+                            status_code=503,
+                            detail="Google service not available for geocoding"
+                        )
+                        
                     geocoding_url = "https://maps.googleapis.com/maps/api/geocode/json"
                     params = {
                         "address": postal_code + ", Canada",
@@ -64,7 +71,6 @@ async def get_nearby_stores(
                         "region": "CA"
                     }
                     
-                    import httpx
                     async with httpx.AsyncClient() as client:
                         response = await client.get(geocoding_url, params=params)
                         geocoding_data = response.json()
@@ -240,7 +246,6 @@ async def get_deals(
                 import os
                 google_api_key = os.getenv("GOOGLE_API_KEY")
                 if google_api_key:
-                    import httpx
                     async with httpx.AsyncClient() as client:
                         geocoding_url = f"https://maps.googleapis.com/maps/api/geocode/json"
                         params = {
