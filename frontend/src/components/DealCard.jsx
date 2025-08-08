@@ -23,6 +23,7 @@ export default function DealCard({
   compact = false, 
   showStore = true,
   onCompare = null,
+  onClick = null,
   className = '' 
 }) {
   const [isFavorited, setIsFavorited] = useState(false);
@@ -66,9 +67,19 @@ export default function DealCard({
     }
   };
 
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(deal);
+    } else if (onCompare) {
+      onCompare(deal);
+    }
+  };
+
   if (compact) {
     return (
-      <div className={`bg-white rounded-lg border border-neutral-200 p-3 hover:shadow-md transition-shadow cursor-pointer ${className}`}>
+      <div 
+        onClick={handleCardClick}
+        className={`bg-white rounded-lg border border-neutral-200 p-3 hover:shadow-md transition-shadow cursor-pointer active:scale-[0.98] transition-transform ${className}`}>
         <div className="flex items-start space-x-3">
           {deal.image_url && (
             <img 
@@ -108,7 +119,9 @@ export default function DealCard({
   }
 
   return (
-    <div className={`bg-white rounded-xl shadow-soft border border-neutral-200 overflow-hidden hover:shadow-md transition-all duration-200 group ${className}`}>
+    <div 
+      onClick={handleCardClick}
+      className={`bg-white rounded-xl shadow-soft border border-neutral-200 overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer active:scale-[0.99] ${className}`}>
       {/* Deal Image & Quick Actions */}
       <div className="relative">
         {deal.image_url ? (

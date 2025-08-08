@@ -23,9 +23,10 @@ import {
 } from 'lucide-react';
 import { useFilters } from '../contexts/FilterContext';
 import DealCard from './DealCard';
+import ProductComparison from './ProductComparison';
 import { apiService } from '../services/api';
 
-// Price Comparison Modal Component
+// Legacy Price Comparison Modal Component (keeping for backward compatibility)
 function PriceComparisonModal({ product, isOpen, onClose, userLocation }) {
   const [comparison, setComparison] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -171,6 +172,7 @@ export default function DealList({
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
   const [comparisonProduct, setComparisonProduct] = useState(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [showNewComparison, setShowNewComparison] = useState(false);
 
   // Filter and sort deals
   const processedDeals = useMemo(() => {
@@ -250,11 +252,12 @@ export default function DealList({
 
   const handleComparePrice = (deal) => {
     setComparisonProduct(deal);
-    setShowComparison(true);
+    setShowNewComparison(true);  // Use the new comparison modal
   };
 
   const closeComparison = () => {
     setShowComparison(false);
+    setShowNewComparison(false);
     setComparisonProduct(null);
   };
 
@@ -421,6 +424,7 @@ export default function DealList({
               key={deal.id || index}
               deal={deal}
               compact={viewMode === 'list'}
+              onClick={handleComparePrice}
               onCompare={handleComparePrice}
               showStore={true}
             />
@@ -428,13 +432,25 @@ export default function DealList({
         </div>
       )}
 
-      {/* Price Comparison Modal */}
-      <PriceComparisonModal
-        product={comparisonProduct}
-        isOpen={showComparison}
-        onClose={closeComparison}
-        userLocation={userLocation}
-      />
+      {/* Legacy Price Comparison Modal - keeping for backward compatibility */}
+      {showComparison && (
+        <PriceComparisonModal
+          product={comparisonProduct}
+          isOpen={showComparison}
+          onClose={closeComparison}
+          userLocation={userLocation}
+        />
+      )}
+
+      {/* New Mobile-First Product Comparison Modal */}
+      {showNewComparison && (
+        <ProductComparison
+          product={comparisonProduct}
+          allDeals={deals}
+          userLocation={userLocation}
+          onClose={() => setShowNewComparison(false)}
+        />
+      )}
     </div>
   );
 }
