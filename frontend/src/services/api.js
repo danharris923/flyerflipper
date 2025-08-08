@@ -145,6 +145,7 @@ export const apiService = {
       query,
       storeId,
       category,
+      storeType = 'grocery', // Default to grocery stores
       minDiscount,
       page = 1,
       perPage = 50,
@@ -159,6 +160,7 @@ export const apiService = {
         query,
         store_id: storeId,
         category,
+        store_type: storeType,
         min_discount: minDiscount,
         page,
         per_page: perPage,

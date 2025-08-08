@@ -48,23 +48,47 @@ const STORE_INFO = {
   'Rexall': { category: 'pharmacy', priceMatch: false, matchPolicy: 'No price matching' }
 };
 
-// Fuzzy matching for similar products
+// Improved product matching for groceries
 function calculateSimilarity(str1, str2) {
   const s1 = str1.toLowerCase();
   const s2 = str2.toLowerCase();
   
-  // Check if key words match
-  const words1 = s1.split(/\s+/);
-  const words2 = s2.split(/\s+/);
+  // Exact match bonus
+  if (s1 === s2) return 1.0;
+  
+  // Remove common grocery words that don't matter for comparison
+  const stopWords = ['fresh', 'organic', 'natural', 'great', 'value', 'brand', 'quality', 'premium', 'select'];
+  
+  const cleanString = (str) => {
+    return str.replace(/\b(lb|kg|g|oz|ml|l|pack|each|ea)\b/g, '') // Remove units
+              .replace(/\d+(\.\d+)?/g, '') // Remove numbers
+              .split(/\s+/)
+              .filter(word => word.length > 2 && !stopWords.includes(word))
+              .join(' ')
+              .trim();
+  };
+  
+  const clean1 = cleanString(s1);
+  const clean2 = cleanString(s2);
+  
+  // Direct substring matching for core products
+  if (clean1.includes(clean2) || clean2.includes(clean1)) {
+    return 0.9;
+  }
+  
+  // Word overlap scoring
+  const words1 = clean1.split(/\s+/);
+  const words2 = clean2.split(/\s+/);
   
   let matches = 0;
-  words1.forEach(word => {
-    if (word.length > 2 && words2.some(w => w.includes(word) || word.includes(w))) {
-      matches++;
-    }
+  words1.forEach(word1 => {
+    words2.forEach(word2 => {
+      if (word1 === word2) matches += 1.0; // Exact word match
+      else if (word1.includes(word2) || word2.includes(word1)) matches += 0.7; // Partial match
+    });
   });
   
-  return matches / Math.max(words1.length, words2.length);
+  return matches / Math.max(words1.length, words2.length, 1);
 }
 
 function getStoreInfo(storeName) {
@@ -109,9 +133,9 @@ export default function ProductComparison({
     const similar = allDeals.filter(deal => {
       if (deal.id === product.id) return true; // Include original
       
-      // Calculate name similarity
+      // Calculate name similarity (higher threshold for better matching)
       const similarity = calculateSimilarity(deal.name || '', product.name || '');
-      if (similarity > 0.3) return true;
+      if (similarity > 0.6) return true;
       
       // Check category match
       if (deal.category === product.category && product.category) return true;

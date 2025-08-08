@@ -225,6 +225,7 @@ async def get_deals(
     query: Optional[str] = Query(None, description="Search query for products"),
     store_id: Optional[int] = Query(None, description="Filter by specific store"),
     category: Optional[str] = Query(None, description="Filter by product category"),
+    store_type: Optional[str] = Query("grocery", description="Filter by store type (grocery, electronics, home, pharmacy, all)"),
     min_discount: Optional[float] = Query(None, ge=0, le=100, description="Minimum discount percentage"),
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(50, ge=1, le=200, description="Items per page"),
@@ -269,6 +270,30 @@ async def get_deals(
             except Exception as geocoding_error:
                 logger.warning(f"Failed to convert coordinates to postal code: {geocoding_error}")
         
+        # Define store type mapping for filtering
+        STORE_TYPE_MAPPING = {
+            'grocery': [
+                'Loblaws', 'No Frills', 'Metro', 'Sobeys', 'FreshCo', 'Food Basics',
+                'Walmart', 'Costco', 'Save-On-Foods', 'Real Canadian Superstore',
+                'IGA', 'Maxi', 'Provigo', 'Independent', 'M&M Food Market',
+                'Farm Boy', 'Valu-mart', 'Your Independent Grocer', 'Zehrs',
+                'Fortinos', 'Dominion', 'Atlantic Superstore', 'Extra Foods'
+            ],
+            'electronics': [
+                'Best Buy', 'The Source', 'Staples', 'Canada Computers', 'Memory Express',
+                'Future Shop', 'London Drugs', 'Visions Electronics'
+            ],
+            'home': [
+                'Canadian Tire', 'Home Depot', 'Rona', 'Lowes', 'Home Hardware',
+                'Kent Building Supplies', 'Réno-Dépôt', 'Princess Auto',
+                'Costco Wholesale', 'IKEA', 'Bed Bath & Beyond'
+            ],
+            'pharmacy': [
+                'Shoppers Drug Mart', 'Rexall', 'Pharmasave', 'Guardian Pharmacy',
+                'Familiprix', 'Jean Coutu', 'Brunet', 'London Drugs'
+            ]
+        }
+
         # Always fetch real-time deals when postal code is available
         if postal_code and flipp_service:
             try:
@@ -276,7 +301,7 @@ async def get_deals(
                 deals_response = await flipp_service.search_deals(
                     postal_code=postal_code,
                     query=query or "",
-                    max_results=per_page * 2  # Get more for filtering
+                    max_results=per_page * 4  # Get more for store type filtering
                 )
                 
                 # Convert to response format and return directly
@@ -288,6 +313,13 @@ async def get_deals(
                             continue
                         if min_discount and deal.get("discount", 0) < min_discount:
                             continue
+                            
+                        # Apply store type filtering
+                        if store_type and store_type != "all":
+                            store_name = deal.get("merchant_name", deal.get("merchant", ""))
+                            allowed_stores = STORE_TYPE_MAPPING.get(store_type, [])
+                            if allowed_stores and not any(allowed_store.lower() in store_name.lower() for allowed_store in allowed_stores):
+                                continue
                             
                         # Generate unique ID from flyer_item_id or create hash
                         deal_id = deal.get("flyer_item_id", "")
