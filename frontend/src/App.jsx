@@ -214,8 +214,9 @@ export default function App() {
     setError(null);
 
     try {
-      // Load nearby stores using the correct API (only if we have coordinates)
+      // Load nearby stores using coordinates or postal code
       if (userLocation.lat && userLocation.lng) {
+        // Use GPS coordinates
         const storesData = await apiService.getNearbyStores({
           lat: userLocation.lat,
           lng: userLocation.lng,
@@ -223,8 +224,16 @@ export default function App() {
           maxResults: 20
         });
         setStores(storesData.stores || []);
+      } else if (userLocation.postalCode) {
+        // Use postal code
+        const storesData = await apiService.getNearbyStores({
+          postal_code: userLocation.postalCode,
+          radius: 10000, // 10km in meters
+          maxResults: 20
+        });
+        setStores(storesData.stores || []);
       } else {
-        // No coordinates available for postal code only locations
+        // No location data available
         setStores([]);
       }
 

@@ -28,8 +28,9 @@ router = APIRouter()
 # Store Endpoints
 @router.get("/stores", response_model=StoreListResponse)
 async def get_nearby_stores(
-    lat: float = Query(..., ge=-90, le=90, description="Latitude coordinate"),
-    lng: float = Query(..., ge=-180, le=180, description="Longitude coordinate"),
+    lat: Optional[float] = Query(None, ge=-90, le=90, description="Latitude coordinate"),
+    lng: Optional[float] = Query(None, ge=-180, le=180, description="Longitude coordinate"),
+    postal_code: Optional[str] = Query(None, description="Canadian postal code (alternative to lat/lng)"),
     radius: int = Query(5000, ge=100, le=50000, description="Search radius in meters"),
     max_results: int = Query(20, ge=1, le=100, description="Maximum number of results"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -40,13 +41,61 @@ async def get_nearby_stores(
     Get nearby grocery stores using Google Places API and database cache.
     
     Returns stores within the specified radius, sorted by distance.
+    Accepts either lat/lng coordinates or postal code.
     """
     try:
+        # Validate input parameters
+        if not ((lat is not None and lng is not None) or postal_code):
+            raise HTTPException(
+                status_code=400, 
+                detail="Either lat/lng coordinates or postal_code is required"
+            )
+        
+        # If postal code provided, convert to coordinates first
+        search_lat, search_lng = lat, lng
+        if not search_lat or not search_lng:
+            if postal_code and google_service:
+                try:
+                    # Geocode postal code to coordinates
+                    geocoding_url = "https://maps.googleapis.com/maps/api/geocode/json"
+                    params = {
+                        "address": postal_code + ", Canada",
+                        "key": google_service.api_key,
+                        "region": "CA"
+                    }
+                    
+                    import httpx
+                    async with httpx.AsyncClient() as client:
+                        response = await client.get(geocoding_url, params=params)
+                        geocoding_data = response.json()
+                    
+                    if geocoding_data["status"] == "OK" and geocoding_data["results"]:
+                        location = geocoding_data["results"][0]["geometry"]["location"]
+                        search_lat = location["lat"]
+                        search_lng = location["lng"]
+                        logger.info(f"Geocoded postal code {postal_code} to {search_lat}, {search_lng}")
+                    else:
+                        raise HTTPException(
+                            status_code=400, 
+                            detail=f"Could not geocode postal code: {postal_code}"
+                        )
+                except Exception as e:
+                    logger.error(f"Geocoding failed for postal code {postal_code}: {e}")
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Failed to geocode postal code: {postal_code}"
+                    )
+            else:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Google service not available for postal code geocoding"
+                )
+
         # First, try to find stores from Google Places API
         new_stores = []
         if google_service:
             try:
-                places = await google_service.nearby_search(lat, lng, radius, max_results)
+                places = await google_service.nearby_search(search_lat, search_lng, radius, max_results)
                 
                 # Save new stores to database
                 for place in places:
