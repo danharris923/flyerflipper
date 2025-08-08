@@ -107,16 +107,26 @@ export const apiService = {
   },
 
   // Stores
-  async getNearbyStores({ lat, lng, radius = 5000, maxResults = 20, page = 1, perPage = 20 }) {
+  async getNearbyStores({ lat, lng, postal_code, radius = 5000, maxResults = 20, page = 1, perPage = 20 }) {
+    const params = {
+      radius,
+      max_results: maxResults,
+      page,
+      per_page: perPage
+    };
+
+    // Add location parameters - either coordinates or postal code
+    if (lat !== undefined && lng !== undefined) {
+      params.lat = lat;
+      params.lng = lng;
+    }
+    
+    if (postal_code) {
+      params.postal_code = postal_code;
+    }
+
     const response = await api.get('/stores', {
-      params: {
-        lat,
-        lng,
-        radius,
-        max_results: maxResults,
-        page,
-        per_page: perPage
-      }
+      params
     });
     return response.data;
   },
