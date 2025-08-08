@@ -66,25 +66,33 @@ export function useLocation(options = {}) {
       },
       (error) => {
         let errorMessage = 'Failed to get location';
+        let suggestion = '';
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location access denied by user';
+            errorMessage = 'Location access blocked';
+            suggestion = 'Please enable location permission in your browser settings, or enter your postal code instead.';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable';
+            errorMessage = 'Location temporarily unavailable';
+            suggestion = 'Try again in a moment, or enter your postal code instead.';
             break;
           case error.TIMEOUT:
             errorMessage = 'Location request timed out';
+            suggestion = 'Your GPS signal may be weak. Try again or enter your postal code.';
             break;
           default:
-            errorMessage = 'An unknown error occurred';
+            errorMessage = 'Location detection failed';
+            suggestion = 'Enter your postal code to find nearby deals.';
             break;
         }
 
+        console.error('Geolocation error:', error);
+        
         setError({ 
           code: error.code, 
           message: errorMessage,
+          suggestion,
           originalError: error
         });
         setLoading(false);

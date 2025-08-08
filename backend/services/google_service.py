@@ -60,6 +60,7 @@ class GoogleService:
             self.api_key = None
             self.enabled = False
         else:
+            logger.info(f"Google API service enabled with API key: {self.api_key[:8]}...")
             self.enabled = True
         
         self.places_base_url = "https://places.googleapis.com/v1"

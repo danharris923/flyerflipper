@@ -225,9 +225,14 @@ export default function LocationDetector({ onLocationDetected, className = '' })
             <h3 className="text-sm font-medium text-red-800 mb-1">
               Location Access Required
             </h3>
-            <p className="text-sm text-red-700 mb-3">
+            <p className="text-sm text-red-700 mb-1">
               {error.message}
             </p>
+            {error.suggestion && (
+              <p className="text-xs text-red-600 mb-3">
+                {error.suggestion}
+              </p>
+            )}
             <div className="flex space-x-2">
               <button
                 onClick={handleLocationRequest}
