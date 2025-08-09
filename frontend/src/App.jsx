@@ -244,12 +244,13 @@ export default function App() {
       }
 
       // Load deals using the correct API (works with postal code or coordinates)
+      // Get MORE deals to see all local stores in 20km radius
       const dealsData = await apiService.getDeals({
         lat: userLocation.lat,
         lng: userLocation.lng,
         postalCode: userLocation.postalCode,
         page: 1,
-        perPage: 50,
+        perPage: 200, // Increased from 50 to see more stores
         refresh: false // Set to true for fresh data
       });
       setDeals(dealsData.items || []);

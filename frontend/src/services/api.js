@@ -148,7 +148,7 @@ export const apiService = {
       storeType = 'grocery', // Default to grocery stores
       minDiscount,
       page = 1,
-      perPage = 50,
+      perPage = 200, // Increased default for better store coverage
       refresh = false
     } = params;
 

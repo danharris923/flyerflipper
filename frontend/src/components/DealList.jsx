@@ -383,8 +383,10 @@ export default function DealList({
       {/* Loading State */}
       {loading && (
         <div className="text-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary-600 mx-auto mb-4" />
-          <p className="text-neutral-600">Loading deals...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-primary-600 mx-auto mb-4" />
+          <p className="text-neutral-700 font-semibold text-lg">Loading deals from all grocery stores...</p>
+          <p className="text-sm text-neutral-500 mt-2">Searching 40+ stores within 20km</p>
+          <p className="text-xs text-neutral-400 mt-1">Fetching up to 200 deals for better coverage</p>
         </div>
       )}
 

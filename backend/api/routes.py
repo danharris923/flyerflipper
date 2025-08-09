@@ -228,7 +228,7 @@ async def get_deals(
     store_type: Optional[str] = Query("grocery", description="Filter by store type (grocery, electronics, home, pharmacy, all)"),
     min_discount: Optional[float] = Query(None, ge=0, le=100, description="Minimum discount percentage"),
     page: int = Query(1, ge=1, description="Page number"),
-    per_page: int = Query(50, ge=1, le=200, description="Items per page"),
+    per_page: int = Query(200, ge=1, le=500, description="Items per page (default 200 for better store coverage)"),
     refresh: bool = Query(False, description="Force refresh from Flipp API"),
     db: Session = Depends(get_db)
 ):
@@ -310,7 +310,7 @@ async def get_deals(
                 deals_response = await flipp_service.search_deals(
                     postal_code=postal_code,
                     query=query or "",
-                    max_results=per_page * 4  # Get more for store type filtering
+                    max_results=min(per_page * 3, 1000)  # Get extra for filtering, cap at 1000
                 )
                 
                 # Convert to response format and return directly
