@@ -62,6 +62,7 @@ async def lifespan(app: FastAPI):
         logger.info(f"📍 Google Places API: {'Available' if settings.GOOGLE_API_KEY else 'Not configured'}")
         logger.info("🏪 Flipp Service: Available (unofficial API)")
         logger.info(f"🔑 API Key Status: Google={bool(settings.GOOGLE_API_KEY)}")
+        logger.info(f"🆔 API Key Preview: {settings.GOOGLE_API_KEY[:12] if settings.GOOGLE_API_KEY else 'None'}...")
         
     except Exception as e:
         logger.error(f"❌ Startup failed: {e}")
