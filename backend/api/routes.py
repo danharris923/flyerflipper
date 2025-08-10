@@ -19,6 +19,7 @@ from ..schemas import (
     DealsComparisonResponse
 )
 from ..services import google_service, flipp_service, scheduler
+from ..services.product_matcher import product_matcher
 
 logger = logging.getLogger(__name__)
 
@@ -143,12 +144,12 @@ async def get_nearby_stores(
         store_results = []
         for store in stores:
             if google_service:
-                distance = google_service._calculate_distance(lat, lng, store.lat, store.lng)
+                distance = google_service._calculate_distance(search_lat, search_lng, store.lat, store.lng)
             else:
                 # Simple distance calculation fallback
                 import math
-                lat1_rad = math.radians(lat)
-                lng1_rad = math.radians(lng)
+                lat1_rad = math.radians(search_lat)
+                lng1_rad = math.radians(search_lng)
                 lat2_rad = math.radians(store.lat)
                 lng2_rad = math.radians(store.lng)
                 
@@ -491,107 +492,194 @@ async def get_deals(
 async def compare_deals(
     product: str = Query(..., description="Product name to compare"),
     postal_code: Optional[str] = Query(None, description="Postal code for location-based comparison"),
+    min_score: float = Query(0.3, description="Minimum relevance score (0.0-1.0)"),
     db: Session = Depends(get_db)
 ):
     """
-    Compare prices for a specific product across different stores.
+    Compare prices for a specific product across different stores using advanced matching.
     
-    Returns the best deal and alternative options.
+    Uses semantic similarity, brand matching, and category validation to find relevant products.
+    Returns the best deal and alternative options ranked by relevance and price.
     """
     try:
-        # Search for the product in database
+        logger.info(f"Comparing deals for product: '{product}' with min_score: {min_score}")
+        
+        # Get all active deals from database first (broad search)
         now = datetime.utcnow()
-        items = db.execute(
+        all_items = db.execute(
             select(FlyerItem)
             .join(Store)
             .where(
                 and_(
-                    FlyerItem.name.ilike(f"%{product}%"),
                     FlyerItem.sale_start <= now,
                     FlyerItem.sale_end >= now
                 )
             )
-            .order_by(FlyerItem.price.asc())
         ).scalars().all()
         
-        if not items:
-            # If no items in database, try to fetch from Flipp API
-            if postal_code and flipp_service:
-                try:
-                    deals_response = await flipp_service.search_product_across_stores(
-                        postal_code=postal_code,
-                        product=product
-                    )
+        logger.info(f"Found {len(all_items)} total active deals in database")
+        
+        # Convert database items to format expected by product matcher
+        db_products = []
+        for item in all_items:
+            store = db.execute(select(Store).where(Store.id == item.store_id)).scalar_one_or_none()
+            if store:
+                db_products.append({
+                    'id': item.id,
+                    'name': item.name,
+                    'description': item.description or '',
+                    'category': item.category or 'other',
+                    'price': float(item.price),
+                    'original_price': float(item.original_price) if item.original_price else None,
+                    'discount_percent': item.discount_percent,
+                    'store_name': store.name,
+                    'store_id': item.store_id,
+                    'image_url': item.image_url,
+                    'flyer_url': item.flyer_url,
+                    'sale_start': item.sale_start,
+                    'sale_end': item.sale_end,
+                    'source': 'database',
+                    'db_item': item  # Keep reference for response building
+                })
+        
+        # If no database results, try Flipp API
+        api_products = []
+        if not db_products and postal_code and flipp_service:
+            try:
+                logger.info(f"No database results, trying Flipp API for postal_code: {postal_code}")
+                deals_response = await flipp_service.search_product_across_stores(
+                    postal_code=postal_code,
+                    product=product
+                )
+                
+                if deals_response.get("items"):
+                    api_products = deals_response["items"]
+                    logger.info(f"Flipp API returned {len(api_products)} items")
                     
-                    if deals_response.get("items"):
-                        # Convert to comparison format
-                        deal_items = deals_response["items"]
-                        best_deal = deal_items[0]  # Assuming first is best
-                        other_deals = deal_items[1:5]  # Up to 4 alternatives
-                        
-                        return {
-                            "product_name": product,
-                            "category": best_deal.get("category", "unknown"),
-                            "best_deal": {
-                                "name": best_deal.get("name"),
-                                "price": best_deal.get("price"),
-                                "store_name": best_deal.get("merchant_name"),
-                                "savings": best_deal.get("original_price", 0) - best_deal.get("price", 0) if best_deal.get("original_price") else 0
-                            },
-                            "other_deals": [
-                                {
-                                    "name": deal.get("name"),
-                                    "price": deal.get("price"),
-                                    "store_name": deal.get("merchant_name")
-                                }
-                                for deal in other_deals
-                            ],
-                            "total_stores": len(deal_items),
-                            "source": "flipp_api"
-                        }
-                except Exception as api_error:
-                    logger.error(f"Error fetching from Flipp API: {api_error}")
-            
+            except Exception as api_error:
+                logger.error(f"Error fetching from Flipp API: {api_error}")
+        
+        # Combine all products for matching
+        all_products = db_products + api_products
+        
+        if not all_products:
             raise HTTPException(status_code=404, detail=f"No deals found for product: {product}")
         
-        # Process database results
-        best_item = items[0]
-        best_store = db.execute(select(Store).where(Store.id == best_item.store_id)).scalar_one()
+        logger.info(f"Total products to match against: {len(all_products)}")
         
-        other_items = items[1:5]  # Up to 4 alternatives
-        
-        # Calculate max savings
-        prices = [item.price for item in items]
-        max_savings = max(prices) - min(prices) if len(prices) > 1 else 0
-        
-        best_deal_response = FlyerItemSearchResponse(
-            **best_item.__dict__,
-            store_name=best_store.name
+        # Use advanced product matching to filter and rank results
+        matched_products = product_matcher.filter_and_rank_products(
+            query_product=product,
+            candidate_products=all_products,
+            min_score=min_score,
+            max_results=10
         )
         
-        other_deals_response = []
-        for item in other_items:
-            store = db.execute(select(Store).where(Store.id == item.store_id)).scalar_one()
-            other_deals_response.append(
-                FlyerItemSearchResponse(
-                    **item.__dict__,
-                    store_name=store.name
+        logger.info(f"Product matcher found {len(matched_products)} relevant matches")
+        
+        if not matched_products:
+            # If no matches with current score, try with lower threshold
+            if min_score > 0.2:
+                logger.info(f"No matches with score {min_score}, retrying with 0.2")
+                matched_products = product_matcher.filter_and_rank_products(
+                    query_product=product,
+                    candidate_products=all_products,
+                    min_score=0.2,
+                    max_results=5
                 )
+        
+        if not matched_products:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"No relevant products found for '{product}'. Try a different search term."
             )
         
-        return DealsComparisonResponse(
-            product_name=product,
-            category=best_item.category,
-            best_deal=best_deal_response,
-            other_deals=other_deals_response,
-            max_savings=max_savings,
-            total_stores=len(set(item.store_id for item in items))
-        )
+        # Extract best deal and alternatives
+        best_product = matched_products[0]
+        other_products = matched_products[1:5]  # Up to 4 alternatives
+        
+        # Build response based on source (database vs API)
+        if best_product.get('source') == 'database':
+            # Database results - use existing response format
+            best_item = best_product['db_item']
+            best_store = db.execute(select(Store).where(Store.id == best_item.store_id)).scalar_one()
+            
+            best_deal_response = {
+                **best_item.__dict__,
+                'store_name': best_store.name,
+                'match_score': best_product['match_score'],
+                'relevance_reason': best_product.get('relevance_reason', '')
+            }
+            
+            other_deals_response = []
+            for product_data in other_products:
+                if product_data.get('source') == 'database':
+                    item = product_data['db_item']
+                    store = db.execute(select(Store).where(Store.id == item.store_id)).scalar_one()
+                    other_deals_response.append({
+                        **item.__dict__,
+                        'store_name': store.name,
+                        'match_score': product_data['match_score'],
+                        'relevance_reason': product_data.get('relevance_reason', '')
+                    })
+                else:
+                    # API result
+                    other_deals_response.append({
+                        'name': product_data.get('name'),
+                        'price': product_data.get('price'),
+                        'store_name': product_data.get('merchant_name', 'Unknown Store'),
+                        'match_score': product_data['match_score'],
+                        'relevance_reason': product_data.get('relevance_reason', '')
+                    })
+            
+            # Calculate savings
+            all_prices = [p['price'] for p in matched_products]
+            max_savings = max(all_prices) - min(all_prices) if len(all_prices) > 1 else 0
+            
+            return {
+                'product_name': product,
+                'category': best_product.get('category', 'unknown'),
+                'best_deal': best_deal_response,
+                'other_deals': other_deals_response,
+                'max_savings': max_savings,
+                'total_stores': len(set(p.get('store_id') or p.get('merchant_name', '') for p in matched_products)),
+                'total_matches': len(matched_products),
+                'source': 'database_with_matching',
+                'matching_algorithm': 'advanced_semantic'
+            }
+        else:
+            # API results - simplified format
+            return {
+                'product_name': product,
+                'category': best_product.get('category', 'unknown'),
+                'best_deal': {
+                    'name': best_product.get('name'),
+                    'price': best_product.get('price'),
+                    'store_name': best_product.get('merchant_name', 'Unknown Store'),
+                    'match_score': best_product['match_score'],
+                    'relevance_reason': best_product.get('relevance_reason', ''),
+                    'savings': best_product.get('original_price', 0) - best_product.get('price', 0) if best_product.get('original_price') else 0
+                },
+                'other_deals': [
+                    {
+                        'name': deal.get('name'),
+                        'price': deal.get('price'),
+                        'store_name': deal.get('merchant_name', 'Unknown Store'),
+                        'match_score': deal['match_score'],
+                        'relevance_reason': deal.get('relevance_reason', '')
+                    }
+                    for deal in other_products
+                ],
+                'total_stores': len(set(p.get('merchant_name', '') for p in matched_products)),
+                'total_matches': len(matched_products),
+                'source': 'flipp_api_with_matching',
+                'matching_algorithm': 'advanced_semantic'
+            }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in compare_deals: {e}")
+        logger.error(f"Error in compare_deals: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to compare deals")
 
 

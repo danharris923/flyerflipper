@@ -18,7 +18,7 @@ from pathlib import Path
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from .config import settings
 from .database import init_db
@@ -225,18 +225,21 @@ async def not_found_handler(request, exc):
         path.startswith("/assets/") or
         "/assets/" in path or
         path == "/health"):
-        return {
-            "error": "Not Found",
-            "message": "The requested resource was not found",
-            "path": path,
-            "available_endpoints": {
-                "api_docs": "/docs",
-                "api_status": "/api/status",
-                "health": "/health",
-                "stores": "/api/stores",
-                "deals": "/api/deals"
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "Not Found",
+                "message": "The requested resource was not found",
+                "path": path,
+                "available_endpoints": {
+                    "api_docs": "/docs",
+                    "api_status": "/api/status",
+                    "health": "/health",
+                    "stores": "/api/stores",
+                    "deals": "/api/deals"
+                }
             }
-        }
+        )
     
     # For non-API routes, try to serve React SPA
     static_dir = Path(__file__).parent.parent / "frontend" / "dist"
@@ -245,22 +248,28 @@ async def not_found_handler(request, exc):
     if index_file.exists():
         return FileResponse(index_file)
     else:
-        return {
-            "error": "Not Found",
-            "message": "Frontend not available",
-            "path": path
-        }
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "Not Found",
+                "message": "Frontend not available",
+                "path": path
+            }
+        )
 
 
 @app.exception_handler(500) 
 async def internal_server_error_handler(request, exc):
     """Custom 500 handler."""
     logger.error(f"Internal server error: {exc}")
-    return {
-        "error": "Internal Server Error",
-        "message": "An unexpected error occurred",
-        "support": "Please contact support if this persists"
-    }
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal Server Error",
+            "message": "An unexpected error occurred",
+            "support": "Please contact support if this persists"
+        }
+    )
 
 
 if __name__ == "__main__":
