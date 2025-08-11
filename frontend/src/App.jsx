@@ -53,7 +53,7 @@ function AppHeader({
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-neutral-900">
-                  FlyerFlutter
+                  FlyerFlipper
                 </h1>
                 <p className="text-xs text-neutral-500 -mt-1">Canadian Coupon Finder</p>
               </div>
@@ -103,13 +103,31 @@ function AppHeader({
 }
 
 // Navigation Component
-function AppNavigation({ showMobileNav, onClose }) {
+function AppNavigation({ showMobileNav, onClose, onLocationChange, stores, userLocation }) {
   const navItems = [
-    { icon: Home, label: 'Deals', active: true },
-    { icon: StoreIcon, label: 'Stores', active: false },
-    { icon: Heart, label: 'Favorites', active: false },
-    { icon: Settings, label: 'Settings', active: false }
+    { icon: Home, label: 'Today\'s Deals', active: true, action: null },
+    { icon: StoreIcon, label: 'Nearby Stores', active: false, action: 'stores', count: stores?.length || 0 },
+    { icon: MapPin, label: 'Change Location', active: false, action: 'location' },
+    { icon: Heart, label: 'Favorites', active: false, action: 'favorites' },
+    { icon: Settings, label: 'Settings', active: false, action: 'settings' }
   ];
+
+  const handleItemClick = (action) => {
+    if (action === 'location') {
+      onLocationChange();
+      onClose();
+    } else if (action === 'stores') {
+      // TODO: Navigate to stores page
+      console.log('Navigate to stores');
+    } else if (action === 'favorites') {
+      // TODO: Navigate to favorites page
+      console.log('Navigate to favorites');
+    } else if (action === 'settings') {
+      // TODO: Navigate to settings page
+      console.log('Navigate to settings');
+    }
+    onClose();
+  };
 
   return (
     <>
@@ -120,27 +138,51 @@ function AppNavigation({ showMobileNav, onClose }) {
             className="absolute inset-0 bg-black bg-opacity-50"
             onClick={onClose}
           />
-          <nav className="absolute left-0 top-0 h-full w-64 bg-white shadow-xl">
+          <nav className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl">
             <div className="p-4">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">FF</span>
+              <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-neutral-200">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-lg">🛒</span>
                 </div>
-                <span className="text-lg font-semibold text-neutral-900">FlyerFlutter</span>
+                <div>
+                  <span className="text-xl font-bold text-neutral-900">FlyerFlipper</span>
+                  <p className="text-xs text-neutral-500">Canadian Coupon Finder</p>
+                </div>
               </div>
               
-              <ul className="space-y-2">
+              {/* Current Location */}
+              {userLocation && (
+                <div className="mb-6 p-3 bg-neutral-50 rounded-lg">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <MapPin className="h-4 w-4 text-neutral-500" />
+                    <span className="text-neutral-700 font-medium">Current Location:</span>
+                  </div>
+                  <p className="text-neutral-600 text-sm mt-1 ml-6">
+                    {userLocation.city || userLocation.postalCode || 'Unknown'}
+                  </p>
+                </div>
+              )}
+              
+              <ul className="space-y-1">
                 {navItems.map((item) => (
                   <li key={item.label}>
                     <button
-                      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      onClick={() => handleItemClick(item.action)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors ${
                         item.active
-                          ? 'bg-primary-50 text-primary-700 font-medium'
+                          ? 'bg-gradient-to-r from-red-50 to-orange-50 text-red-700 font-semibold'
                           : 'text-neutral-700 hover:bg-neutral-100'
                       }`}
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.label}</span>
+                      <div className="flex items-center space-x-3">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.count > 0 && (
+                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                          {item.count}
+                        </span>
+                      )}
                     </button>
                   </li>
                 ))}
@@ -149,8 +191,6 @@ function AppNavigation({ showMobileNav, onClose }) {
           </nav>
         </div>
       )}
-
-      {/* Desktop Navigation - Remove fixed sidebar that was overlapping content */}
     </>
   );
 }
@@ -253,7 +293,26 @@ export default function App() {
         perPage: 200, // Increased from 50 to see more stores
         refresh: false // Set to true for fresh data
       });
-      setDeals(dealsData.items || []);
+      // Filter deals to show only one deal per store for front page
+      const dealsItems = dealsData.items || [];
+      const uniqueStoreDeals = [];
+      const seenStores = new Set();
+      
+      // Get the best deal from each store (highest discount first)
+      const sortedDeals = dealsItems.sort((a, b) => {
+        const discountA = a.discount_percent || 0;
+        const discountB = b.discount_percent || 0;
+        return discountB - discountA;
+      });
+      
+      for (const deal of sortedDeals) {
+        if (!seenStores.has(deal.store_name) && uniqueStoreDeals.length < 12) {
+          uniqueStoreDeals.push(deal);
+          seenStores.add(deal.store_name);
+        }
+      }
+      
+      setDeals(uniqueStoreDeals);
 
     } catch (err) {
       console.error('Failed to load data:', err);
@@ -310,6 +369,9 @@ export default function App() {
         <AppNavigation 
           showMobileNav={showMobileNav} 
           onClose={closeMobileNav}
+          onLocationChange={handleLocationChange}
+          stores={stores}
+          userLocation={userLocation}
         />
 
         {/* Main Content */}
@@ -374,7 +436,7 @@ export default function App() {
                     <span className="text-3xl">🛒💰</span>
                   </div>
                   <h2 className="text-3xl font-bold text-neutral-900 mb-4">
-                    Welcome to FlyerFlutter
+                    Welcome to FlyerFlipper
                   </h2>
                   <p className="text-lg text-neutral-700 mb-2 max-w-2xl mx-auto">
                     🇨🇦 Canada's Premier Grocery Coupon & Flyer Comparison App
